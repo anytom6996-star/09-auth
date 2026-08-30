@@ -1,0 +1,15 @@
+.container {
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.title {
+  margin-bottom: 16px;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.description {
+  font-size: 18px;
+  line-height: 1.6;
+}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Roboto } from 'next/font/google';
 
+
 import AuthProvider from '@/components/AuthProvider/AuthProvider';
 import TanStackProvider from '@/components/TanStackProvider/TanStackProvider';
 

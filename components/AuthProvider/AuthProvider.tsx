@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-import { getMe } from '@/lib/api';
+import { getMe } from '@/lib/api/clientApi';
 import { useAuthStore } from '@/lib/store/authStore';
 
 interface AuthProviderProps {

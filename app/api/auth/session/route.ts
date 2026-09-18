@@ -1,42 +1,48 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { api } from '../../api';
+import { parseSetCookie } from 'cookie';
 import { isAxiosError } from 'axios';
-
-import { api } from '@/app/api/api';
+import { logErrorResponse } from '../../_utils/utils';
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
+    const accessToken = cookieStore.get('accessToken')?.value;
+    const refreshToken = cookieStore.get('refreshToken')?.value;
 
-    const cookieHeader = cookieStore
-      .getAll()
-      .map(({ name, value }) => `${name}=${value}`)
-      .join('; ');
-
-    const response = await api.get('/auth/session', {
-      headers: {
-        Cookie: cookieHeader,
-      },
-    });
-
-    return NextResponse.json(response.data, {
-      status: response.status,
-    });
-  } catch (error) {
-    if (isAxiosError(error)) {
-      return NextResponse.json(
-        error.response?.data ?? {
-          message: 'Session check failed',
-        },
-        {
-          status: error.response?.status ?? 401,
-        },
-      );
+    if (accessToken) {
+      return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json(
-      { message: 'Something went wrong' },
-      { status: 500 },
-    );
+    if (refreshToken) {
+      const apiRes = await api.get('auth/session', {
+        headers: {
+          Cookie: cookieStore.toString(),
+        },
+      });
+
+      const setCookie = apiRes.headers['set-cookie'];
+
+      if (setCookie) {
+        const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+        for (const cookieStr of cookieArray) {
+          const parsed = parseSetCookie(cookieStr);
+
+          if (parsed.value) {
+            cookieStore.set(parsed.name, parsed.value, parsed);
+          }
+        }
+        return NextResponse.json({ success: true }, { status: 200 });
+      }
+    }
+    return NextResponse.json({ success: false }, { status: 200 });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
+      return NextResponse.json({ success: false }, { status: 200 });
+    }
+    logErrorResponse({ message: (error as Error).message });
+    return NextResponse.json({ success: false }, { status: 200 });
   }
 }

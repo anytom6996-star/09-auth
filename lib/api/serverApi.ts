@@ -8,26 +8,17 @@ import { api } from './api';
 const getCookieHeader = async () => {
   const cookieStore = await cookies();
 
-  return cookieStore
-    .getAll()
-    .map(({ name, value }) => `${name}=${value}`)
-    .join('; ');
+  return cookieStore.toString();
 };
 
-export const checkSession = async (): Promise<boolean> => {
-  try {
-    const cookieHeader = await getCookieHeader();
+export const checkSession = async () => {
+  const cookieHeader = await getCookieHeader();
 
-    await api.get('/auth/session', {
-      headers: {
-        Cookie: cookieHeader,
-      },
-    });
-
-    return true;
-  } catch {
-    return false;
-  }
+  return api.get('/auth/session', {
+    headers: {
+      Cookie: cookieHeader,
+    },
+  });
 };
 
 export const getMe = async (): Promise<User> => {
@@ -62,7 +53,7 @@ export const fetchNotes = async ({
       page,
       perPage,
       search,
-      ...(tag ? { tag } : {}),
+      tag,
     },
     headers: {
       Cookie: cookieHeader,

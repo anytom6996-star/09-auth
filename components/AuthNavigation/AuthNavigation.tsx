@@ -10,36 +10,53 @@ export default function AuthNavigation() {
   const router = useRouter();
 
   const user = useAuthStore(state => state.user);
-  const clearAuth = useAuthStore(state => state.clearAuth);
+  const isAuthenticated = useAuthStore(
+    state => state.isAuthenticated,
+  );
+  const clearIsAuthenticated = useAuthStore(state => state.clearIsAuthenticated);
 
   const handleLogout = async () => {
     try {
       await logout();
     } finally {
-      clearAuth();
+      clearIsAuthenticated();
       router.push('/sign-in');
       router.refresh();
     }
   };
 
-  return (
-    <nav>
-      {user ? (
-        <>
-          <Link href="/profile">
-            {user.username || user.email}
+  if (isAuthenticated && user) {
+    return (
+      <>
+        <li>
+          <Link href="/profile" prefetch={false}>
+            Profile
           </Link>
+        </li>
 
+        <li>
+          <p>{user.email}</p>
           <button type="button" onClick={handleLogout}>
             Logout
           </button>
-        </>
-      ) : (
-        <>
-          <Link href="/sign-in">Login</Link>
-          <Link href="/sign-up">Register</Link>
-        </>
-      )}
-    </nav>
+        </li>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <li>
+        <Link href="/sign-in" prefetch={false}>
+          Login
+        </Link>
+      </li>
+
+      <li>
+        <Link href="/sign-up" prefetch={false}>
+          Sign up
+        </Link>
+      </li>
+    </>
   );
 }

@@ -13,7 +13,7 @@ export default function AuthProvider({
   children,
 }: AuthProviderProps) {
   const setUser = useAuthStore(state => state.setUser);
-  const clearAuth = useAuthStore(state => state.clearAuth);
+  const clearIsAuthenticated = useAuthStore(state => state.clearIsAuthenticated);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -22,12 +22,12 @@ export default function AuthProvider({
 
         setUser(user);
       } catch {
-        clearAuth();
+        clearIsAuthenticated();
       }
     };
 
     checkAuth();
-  }, [setUser, clearAuth]);
+  }, [setUser, clearIsAuthenticated]);
 
   return children;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -12,14 +13,7 @@ export default function EditProfileForm() {
   const user = useAuthStore(state => state.user);
   const setUser = useAuthStore(state => state.setUser);
 
-  const [username, setUsername] = useState(
-    user?.username ?? '',
-  );
-
-  const [email, setEmail] = useState(
-    user?.email ?? '',
-  );
-
+  const [username, setUsername] = useState(user?.username ?? '');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,17 +25,19 @@ export default function EditProfileForm() {
     setError('');
     setIsLoading(true);
 
+    if (!user) {
+      setError('User not found.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const updatedUser = await updateMe({
         username,
-        email,
+        email: user.email,
       });
 
-      setUser({
-        username: updatedUser.username,
-        email: updatedUser.email,
-        avatar: updatedUser.avatar ?? user?.avatar ?? '',
-      });
+      setUser(updatedUser);
 
       router.push('/profile');
       router.refresh();
@@ -52,49 +48,55 @@ export default function EditProfileForm() {
     }
   };
 
+  if (!user) {
+    return null;
+  }
+
   return (
-    <form onSubmit={handleSubmit}>
+    <main>
       <div>
-        <label htmlFor="username">Username</label>
+        <h1>Edit Profile</h1>
 
-        <input
-          id="username"
-          name="username"
-          value={username}
-          onChange={event =>
-            setUsername(event.target.value)
-          }
-          required
+        <Image
+          src={user.avatar}
+          alt="User Avatar"
+          width={120}
+          height={120}
         />
+
+        <form onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="username">Username:</label>
+
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={event =>
+                setUsername(event.target.value)
+              }
+              required
+            />
+          </div>
+
+          <p>Email: {user.email}</p>
+
+          {error && <p>{error}</p>}
+
+          <div>
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => router.push('/profile')}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
-
-      <div>
-        <label htmlFor="email">Email</label>
-
-        <input
-          id="email"
-          name="email"
-          type="email"
-          value={email}
-          onChange={event =>
-            setEmail(event.target.value)
-          }
-          required
-        />
-      </div>
-
-      {error && <p>{error}</p>}
-
-      <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Saving...' : 'Save changes'}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => router.back()}
-      >
-        Cancel
-      </button>
-    </form>
+    </main>
   );
 }

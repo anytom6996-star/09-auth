@@ -1,30 +1,39 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { isAxiosError } from 'axios';
 
-const API_URL = 'https://notehub-public.goit.study/api';
+import { api } from '@/app/api/api';
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const token = request.headers.get('authorization');
+    const cookieStore = await cookies();
 
-    if (!token) {
-      return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 },
-      );
-    }
+    const cookieHeader = cookieStore
+      .getAll()
+      .map(({ name, value }) => `${name}=${value}`)
+      .join('; ');
 
-    const response = await fetch(`${API_URL}/auth/me`, {
+    const response = await api.get('/auth/session', {
       headers: {
-        Authorization: token,
+        Cookie: cookieHeader,
       },
     });
 
-    const data = await response.json();
-
-    return NextResponse.json(data, {
+    return NextResponse.json(response.data, {
       status: response.status,
     });
-  } catch {
+  } catch (error) {
+    if (isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data ?? {
+          message: 'Session check failed',
+        },
+        {
+          status: error.response?.status ?? 401,
+        },
+      );
+    }
+
     return NextResponse.json(
       { message: 'Something went wrong' },
       { status: 500 },

@@ -1,47 +1,36 @@
-'use client';
-
+import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
-import { logout } from '@/lib/api/clientApi';
-import { useAuthStore } from '@/lib/store/authStore';
+import { getMe } from '@/lib/api/serverApi';
 
-export default function ProfilePage() {
-  const router = useRouter();
+export const metadata: Metadata = {
+  title: 'Profile | NoteHub',
+  description: 'User profile',
+};
 
-  const user = useAuthStore(state => state.user);
-  const clearAuth = useAuthStore(state => state.clearAuth);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } finally {
-      clearAuth();
-
-      document.cookie =
-        'auth-token=; path=/; max-age=0';
-
-      router.push('/login');
-      router.refresh();
-    }
-  };
-
-  if (!user) {
-    return <main>Loading...</main>;
-  }
+export default async function ProfilePage() {
+  const user = await getMe();
 
   return (
     <main>
       <h1>Profile</h1>
 
+      {user.avatar ? (
+        <Image
+          src={user.avatar}
+          alt={user.username}
+          width={120}
+          height={120}
+        />
+      ) : null}
+
       <p>Username: {user.username}</p>
       <p>Email: {user.email}</p>
 
-      <Link href="/profile/edit">Edit profile</Link>
-
-      <button type="button" onClick={handleLogout}>
-        Logout
-      </button>
+      <Link href="/profile/edit">
+        Edit profile
+      </Link>
     </main>
   );
 }

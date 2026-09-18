@@ -9,16 +9,13 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-const AuthProvider = ({ children }: AuthProviderProps) => {
+export default function AuthProvider({
+  children,
+}: AuthProviderProps) {
   const setUser = useAuthStore(state => state.setUser);
   const clearAuth = useAuthStore(state => state.clearAuth);
-  const token = useAuthStore(state => state.token);
 
   useEffect(() => {
-    if (!token) {
-      return;
-    }
-
     const checkAuth = async () => {
       try {
         const user = await getMe();
@@ -30,9 +27,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     checkAuth();
-  }, [token, setUser, clearAuth]);
+  }, [setUser, clearAuth]);
 
   return children;
-};
-
-export default AuthProvider;
+}

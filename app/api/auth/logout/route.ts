@@ -1,33 +1,49 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { isAxiosError } from 'axios';
 
-const API_URL = 'https://notehub-public.goit.study/api';
+import { api } from '@/app/api/api';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const token = request.headers.get('authorization');
+    const cookieStore = await cookies();
 
-    const response = await fetch(`${API_URL}/auth/logout`, {
-      method: 'POST',
-      headers: token
-        ? {
-            Authorization: token,
-          }
-        : {},
-    });
+    const cookieHeader = cookieStore
+      .getAll()
+      .map(({ name, value }) => `${name}=${value}`)
+      .join('; ');
 
-    const nextResponse = NextResponse.json(
-      { success: true },
-      { status: response.ok ? 200 : response.status },
+    const response = await api.post(
+      '/auth/logout',
+      {},
+      {
+        headers: {
+          Cookie: cookieHeader,
+        },
+      },
     );
 
-    nextResponse.cookies.delete('session_token');
+    cookieStore.delete('accessToken');
+    cookieStore.delete('refreshToken');
 
-    return nextResponse;
-  } catch {
-    const nextResponse = NextResponse.json({ success: true });
+    return NextResponse.json(response.data, {
+      status: response.status,
+    });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data ?? {
+          message: 'Logout failed',
+        },
+        {
+          status: error.response?.status ?? 500,
+        },
+      );
+    }
 
-    nextResponse.cookies.delete('session_token');
-
-    return nextResponse;
+    return NextResponse.json(
+      { message: 'Something went wrong' },
+      { status: 500 },
+    );
   }
 }

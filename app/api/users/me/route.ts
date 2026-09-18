@@ -1,34 +1,43 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { isAxiosError } from 'axios';
 
-const API_URL = 'https://notehub-public.goit.study/api';
+import { api } from '@/app/api/api';
 
-function getAuthorization(request: Request) {
-  return request.headers.get('authorization');
+async function getCookieHeader() {
+  const cookieStore = await cookies();
+
+  return cookieStore
+    .getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join('; ');
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const authorization = getAuthorization(request);
+    const cookieHeader = await getCookieHeader();
 
-    if (!authorization) {
-      return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 },
-      );
-    }
-
-    const response = await fetch(`${API_URL}/auth/me`, {
+    const response = await api.get('/users/me', {
       headers: {
-        Authorization: authorization,
+        Cookie: cookieHeader,
       },
     });
 
-    const data = await response.json();
-
-    return NextResponse.json(data, {
+    return NextResponse.json(response.data, {
       status: response.status,
     });
-  } catch {
+  } catch (error) {
+    if (isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data ?? {
+          message: 'Failed to get user',
+        },
+        {
+          status: error.response?.status ?? 500,
+        },
+      );
+    }
+
     return NextResponse.json(
       { message: 'Something went wrong' },
       { status: 500 },
@@ -38,31 +47,34 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const authorization = getAuthorization(request);
+    const cookieHeader = await getCookieHeader();
     const body = await request.json();
 
-    if (!authorization) {
+    const response = await api.patch(
+      '/users/me',
+      body,
+      {
+        headers: {
+          Cookie: cookieHeader,
+        },
+      },
+    );
+
+    return NextResponse.json(response.data, {
+      status: response.status,
+    });
+  } catch (error) {
+    if (isAxiosError(error)) {
       return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 },
+        error.response?.data ?? {
+          message: 'Failed to update user',
+        },
+        {
+          status: error.response?.status ?? 500,
+        },
       );
     }
 
-    const response = await fetch(`${API_URL}/auth/me`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: authorization,
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json();
-
-    return NextResponse.json(data, {
-      status: response.status,
-    });
-  } catch {
     return NextResponse.json(
       { message: 'Something went wrong' },
       { status: 500 },

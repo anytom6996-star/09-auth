@@ -1,24 +1,46 @@
-import axios from 'axios';
-
 import { cookies } from 'next/headers';
 
 import type { Note, NotesResponse } from '@/types/note';
+import type { User } from '@/types/user';
 
-const API_URL = 'https://notehub-public.goit.study/api';
+import { api } from './api';
 
-async function serverApi() {
+const getCookieHeader = async () => {
   const cookieStore = await cookies();
-  const token = cookieStore.get('auth-token')?.value;
 
-  return axios.create({
-    baseURL: API_URL,
-    headers: token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : {},
+  return cookieStore
+    .getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join('; ');
+};
+
+export const checkSession = async (): Promise<boolean> => {
+  try {
+    const cookieHeader = await getCookieHeader();
+
+    await api.get('/auth/session', {
+      headers: {
+        Cookie: cookieHeader,
+      },
+    });
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const getMe = async (): Promise<User> => {
+  const cookieHeader = await getCookieHeader();
+
+  const response = await api.get<User>('/users/me', {
+    headers: {
+      Cookie: cookieHeader,
+    },
   });
-}
+
+  return response.data;
+};
 
 interface FetchNotesParams {
   page: number;
@@ -33,7 +55,7 @@ export const fetchNotes = async ({
   search,
   tag,
 }: FetchNotesParams): Promise<NotesResponse> => {
-  const api = await serverApi();
+  const cookieHeader = await getCookieHeader();
 
   const response = await api.get<NotesResponse>('/notes', {
     params: {
@@ -41,6 +63,9 @@ export const fetchNotes = async ({
       perPage,
       search,
       ...(tag ? { tag } : {}),
+    },
+    headers: {
+      Cookie: cookieHeader,
     },
   });
 
@@ -50,9 +75,13 @@ export const fetchNotes = async ({
 export const fetchNoteById = async (
   id: string,
 ): Promise<Note> => {
-  const api = await serverApi();
+  const cookieHeader = await getCookieHeader();
 
-  const response = await api.get<Note>(`/notes/${id}`);
+  const response = await api.get<Note>(`/notes/${id}`, {
+    headers: {
+      Cookie: cookieHeader,
+    },
+  });
 
   return response.data;
 };

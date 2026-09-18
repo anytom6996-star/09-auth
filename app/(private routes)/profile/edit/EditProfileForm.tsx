@@ -12,13 +12,20 @@ export default function EditProfileForm() {
   const user = useAuthStore(state => state.user);
   const setUser = useAuthStore(state => state.setUser);
 
-  const [username, setUsername] = useState(user?.username ?? '');
-  const [email, setEmail] = useState(user?.email ?? '');
+  const [username, setUsername] = useState(
+    user?.username ?? '',
+  );
+
+  const [email, setEmail] = useState(
+    user?.email ?? '',
+  );
 
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
 
     setError('');
@@ -30,7 +37,11 @@ export default function EditProfileForm() {
         email,
       });
 
-      setUser(updatedUser);
+      setUser({
+        username: updatedUser.username,
+        email: updatedUser.email,
+        avatar: updatedUser.avatar ?? user?.avatar ?? '',
+      });
 
       router.push('/profile');
       router.refresh();
@@ -45,23 +56,29 @@ export default function EditProfileForm() {
     <form onSubmit={handleSubmit}>
       <div>
         <label htmlFor="username">Username</label>
+
         <input
           id="username"
           name="username"
           value={username}
-          onChange={event => setUsername(event.target.value)}
+          onChange={event =>
+            setUsername(event.target.value)
+          }
           required
         />
       </div>
 
       <div>
         <label htmlFor="email">Email</label>
+
         <input
           id="email"
           name="email"
           type="email"
           value={email}
-          onChange={event => setEmail(event.target.value)}
+          onChange={event =>
+            setEmail(event.target.value)
+          }
           required
         />
       </div>

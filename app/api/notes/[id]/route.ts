@@ -1,51 +1,53 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { isAxiosError } from 'axios';
 
-const API_URL = 'https://notehub-public.goit.study/api';
+import { api } from '@/app/api/api';
 
-function getAuthorization(request: Request) {
-  return request.headers.get('authorization');
+interface RouteContext {
+  params: Promise<{
+    id: string;
+  }>;
 }
 
-export async function GET(request: Request) {
+async function getCookieHeader() {
+  const cookieStore = await cookies();
+
+  return cookieStore
+    .getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join('; ');
+}
+
+export async function GET(
+  request: Request,
+  { params }: RouteContext,
+) {
   try {
-    const authorization = getAuthorization(request);
-    const { searchParams } = new URL(request.url);
+    const { id } = await params;
+    const cookieHeader = await getCookieHeader();
 
-    const page = searchParams.get('page') ?? '1';
-    const perPage = searchParams.get('perPage') ?? '12';
-    const search = searchParams.get('search');
-    const tag = searchParams.get('tag');
-
-    const params = new URLSearchParams({
-      page,
-      perPage,
+    const response = await api.get(`/notes/${id}`, {
+      headers: {
+        Cookie: cookieHeader,
+      },
     });
 
-    if (search) {
-      params.set('search', search);
-    }
-
-    if (tag) {
-      params.set('tag', tag);
-    }
-
-    const response = await fetch(
-      `${API_URL}/notes?${params.toString()}`,
-      {
-        headers: authorization
-          ? {
-              Authorization: authorization,
-            }
-          : {},
-      },
-    );
-
-    const data = await response.json();
-
-    return NextResponse.json(data, {
+    return NextResponse.json(response.data, {
       status: response.status,
     });
-  } catch {
+  } catch (error) {
+    if (isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data ?? {
+          message: 'Failed to fetch note',
+        },
+        {
+          status: error.response?.status ?? 500,
+        },
+      );
+    }
+
     return NextResponse.json(
       { message: 'Something went wrong' },
       { status: 500 },
@@ -53,34 +55,76 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function DELETE(
+  request: Request,
+  { params }: RouteContext,
+) {
   try {
-    const authorization = getAuthorization(request);
+    const { id } = await params;
+    const cookieHeader = await getCookieHeader();
 
-    if (!authorization) {
+    const response = await api.delete(`/notes/${id}`, {
+      headers: {
+        Cookie: cookieHeader,
+      },
+    });
+
+    return NextResponse.json(response.data, {
+      status: response.status,
+    });
+  } catch (error) {
+    if (isAxiosError(error)) {
       return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 },
+        error.response?.data ?? {
+          message: 'Failed to delete note',
+        },
+        {
+          status: error.response?.status ?? 500,
+        },
       );
     }
 
+    return NextResponse.json(
+      { message: 'Something went wrong' },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: RouteContext,
+) {
+  try {
+    const { id } = await params;
+    const cookieHeader = await getCookieHeader();
     const body = await request.json();
 
-    const response = await fetch(`${API_URL}/notes`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: authorization,
+    const response = await api.patch(
+      `/notes/${id}`,
+      body,
+      {
+        headers: {
+          Cookie: cookieHeader,
+        },
       },
-      body: JSON.stringify(body),
-    });
+    );
 
-    const data = await response.json();
-
-    return NextResponse.json(data, {
+    return NextResponse.json(response.data, {
       status: response.status,
     });
-  } catch {
+  } catch (error) {
+    if (isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data ?? {
+          message: 'Failed to update note',
+        },
+        {
+          status: error.response?.status ?? 500,
+        },
+      );
+    }
+
     return NextResponse.json(
       { message: 'Something went wrong' },
       { status: 500 },

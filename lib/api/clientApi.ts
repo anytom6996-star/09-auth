@@ -1,7 +1,5 @@
 'use client';
 
-import axios from 'axios';
-
 import type {
   CreateNoteParams,
   Note,
@@ -17,21 +15,21 @@ import type {
 
 import type { User } from '@/types/user';
 
-const api = axios.create({
-  baseURL: 'https://notehub-public.goit.study/api',
-});
+import { api } from './api';
+
+interface FetchNotesParams {
+  page: number;
+  perPage: number;
+  search?: string;
+  tag?: string;
+}
 
 export const fetchNotes = async ({
   page,
   perPage,
   search,
   tag,
-}: {
-  page: number;
-  perPage: number;
-  search?: string;
-  tag?: string;
-}): Promise<NotesResponse> => {
+}: FetchNotesParams): Promise<NotesResponse> => {
   const response = await api.get<NotesResponse>('/notes', {
     params: {
       page,
@@ -95,7 +93,7 @@ export const logout = async (): Promise<void> => {
 };
 
 export const getMe = async (): Promise<User> => {
-  const response = await api.get<User>('/auth/me');
+  const response = await api.get<User>('/users/me');
 
   return response.data;
 };
@@ -104,7 +102,7 @@ export const updateMe = async (
   data: UpdateUserRequest,
 ): Promise<User> => {
   const response = await api.patch<User>(
-    '/auth/me',
+    '/users/me',
     data,
   );
 

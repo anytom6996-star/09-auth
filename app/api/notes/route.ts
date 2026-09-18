@@ -1,51 +1,47 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { isAxiosError } from 'axios';
 
-const API_URL = 'https://notehub-public.goit.study/api';
-
-function getAuthorization(request: Request) {
-  return request.headers.get('authorization');
-}
+import { api } from '@/app/api/api';
 
 export async function GET(request: Request) {
   try {
-    const authorization = getAuthorization(request);
+    const cookieStore = await cookies();
+
+    const cookieHeader = cookieStore
+      .getAll()
+      .map(({ name, value }) => `${name}=${value}`)
+      .join('; ');
+
     const { searchParams } = new URL(request.url);
 
-    const page = searchParams.get('page') ?? '1';
-    const perPage = searchParams.get('perPage') ?? '12';
-    const search = searchParams.get('search');
-    const tag = searchParams.get('tag');
-
-    const params = new URLSearchParams({
-      page,
-      perPage,
+    const response = await api.get('/notes', {
+      params: {
+        page: searchParams.get('page') ?? '1',
+        perPage: searchParams.get('perPage') ?? '12',
+        search: searchParams.get('search') ?? undefined,
+        tag: searchParams.get('tag') ?? undefined,
+      },
+      headers: {
+        Cookie: cookieHeader,
+      },
     });
 
-    if (search) {
-      params.set('search', search);
-    }
-
-    if (tag) {
-      params.set('tag', tag);
-    }
-
-    const response = await fetch(
-      `${API_URL}/notes?${params.toString()}`,
-      {
-        headers: authorization
-          ? {
-              Authorization: authorization,
-            }
-          : {},
-      },
-    );
-
-    const data = await response.json();
-
-    return NextResponse.json(data, {
+    return NextResponse.json(response.data, {
       status: response.status,
     });
-  } catch {
+  } catch (error) {
+    if (isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data ?? {
+          message: 'Failed to fetch notes',
+        },
+        {
+          status: error.response?.status ?? 500,
+        },
+      );
+    }
+
     return NextResponse.json(
       { message: 'Something went wrong' },
       { status: 500 },
@@ -55,32 +51,36 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authorization = getAuthorization(request);
+    const cookieStore = await cookies();
 
-    if (!authorization) {
-      return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 },
-      );
-    }
+    const cookieHeader = cookieStore
+      .getAll()
+      .map(({ name, value }) => `${name}=${value}`)
+      .join('; ');
 
     const body = await request.json();
 
-    const response = await fetch(`${API_URL}/notes`, {
-      method: 'POST',
+    const response = await api.post('/notes', body, {
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: authorization,
+        Cookie: cookieHeader,
       },
-      body: JSON.stringify(body),
     });
 
-    const data = await response.json();
-
-    return NextResponse.json(data, {
+    return NextResponse.json(response.data, {
       status: response.status,
     });
-  } catch {
+  } catch (error) {
+    if (isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data ?? {
+          message: 'Failed to create note',
+        },
+        {
+          status: error.response?.status ?? 500,
+        },
+      );
+    }
+
     return NextResponse.json(
       { message: 'Something went wrong' },
       { status: 500 },

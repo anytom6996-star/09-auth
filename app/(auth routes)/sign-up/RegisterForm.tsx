@@ -11,7 +11,6 @@ export default function RegisterForm() {
   const router = useRouter();
 
   const setUser = useAuthStore(state => state.setUser);
-  const setToken = useAuthStore(state => state.setToken);
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -33,10 +32,11 @@ export default function RegisterForm() {
         password,
       });
 
-      setUser(response.user);
-      setToken(response.token);
-
-      document.cookie = `auth-token=${response.token}; path=/; max-age=2592000`;
+      setUser({
+        username: response.user.username,
+        email: response.user.email,
+        avatar: '',
+      });
 
       router.push('/profile');
       router.refresh();
@@ -92,7 +92,8 @@ export default function RegisterForm() {
       </button>
 
       <p>
-        Already have an account? <Link href="/login">Login</Link>
+        Already have an account?{' '}
+        <Link href="/sign-in">Login</Link>
       </p>
     </form>
   );

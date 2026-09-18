@@ -11,7 +11,6 @@ export default function LoginForm() {
   const router = useRouter();
 
   const setUser = useAuthStore(state => state.setUser);
-  const setToken = useAuthStore(state => state.setToken);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,9 +18,7 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setError('');
@@ -33,15 +30,16 @@ export default function LoginForm() {
         password,
       });
 
-      setToken(response.token);
-      setUser(response.user);
-
-      document.cookie = `auth-token=${response.token}; path=/; max-age=2592000`;
+      setUser({
+        username: response.user.username,
+        email: response.user.email,
+        avatar: '',
+      });
 
       router.push('/profile');
       router.refresh();
     } catch {
-      setError('Invalid email or password.');
+      setError('Login failed. Please check your email and password.');
     } finally {
       setIsLoading(false);
     }
@@ -51,7 +49,6 @@ export default function LoginForm() {
     <form onSubmit={handleSubmit}>
       <div>
         <label htmlFor="email">Email</label>
-
         <input
           id="email"
           name="email"
@@ -64,7 +61,6 @@ export default function LoginForm() {
 
       <div>
         <label htmlFor="password">Password</label>
-
         <input
           id="password"
           name="password"
@@ -72,7 +68,6 @@ export default function LoginForm() {
           value={password}
           onChange={event => setPassword(event.target.value)}
           required
-          minLength={6}
         />
       </div>
 
@@ -84,7 +79,7 @@ export default function LoginForm() {
 
       <p>
         Don&apos;t have an account?{' '}
-        <Link href="/register">Register</Link>
+        <Link href="/sign-up">Register</Link>
       </p>
     </form>
   );

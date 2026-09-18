@@ -1,40 +1,56 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { isAxiosError } from 'axios';
 
-const API_URL = 'https://notehub-public.goit.study/api';
+import { api } from '@/app/api/api';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
+    const response = await api.post('/auth/login', body);
+
+    const setCookie = response.headers['set-cookie'];
+
+    if (setCookie) {
+      const cookieStore = await cookies();
+
+      setCookie.forEach(cookie => {
+        const [nameValue, ...attributes] = cookie.split('; ');
+        const [name, ...valueParts] = nameValue.split('=');
+
+        cookieStore.set({
+          name,
+          value: valueParts.join('='),
+          ...Object.fromEntries(
+            attributes.map(attribute => {
+              const [key, ...value] = attribute.split('=');
+
+              return [
+                key.toLowerCase(),
+                value.length ? value.join('=') : true,
+              ];
+            }),
+          ),
+        });
+      });
+    }
+
+    return NextResponse.json(response.data, {
+      status: response.status,
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(data, {
-        status: response.status,
-      });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data ?? {
+          message: 'Login failed',
+        },
+        {
+          status: error.response?.status ?? 500,
+        },
+      );
     }
 
-    const nextResponse = NextResponse.json(data);
-
-    if (data.token) {
-      nextResponse.cookies.set('session_token', data.token, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-      });
-    }
-
-    return nextResponse;
-  } catch {
     return NextResponse.json(
       { message: 'Something went wrong' },
       { status: 500 },

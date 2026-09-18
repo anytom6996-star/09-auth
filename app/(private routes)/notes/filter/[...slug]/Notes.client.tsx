@@ -14,10 +14,13 @@ interface NotesClientProps {
   tag?: string;
 }
 
-export default function NotesClient({ tag }: NotesClientProps) {
+export default function NotesClient({
+  tag,
+}: NotesClientProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] =
+    useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -32,7 +35,11 @@ export default function NotesClient({ tag }: NotesClientProps) {
     setPage(1);
   }, [tag]);
 
-  const { data, isLoading, isError } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['notes', page, debouncedSearch, tag],
     queryFn: () =>
       fetchNotes({
@@ -70,21 +77,28 @@ export default function NotesClient({ tag }: NotesClientProps) {
 
   return (
     <main>
-      <SearchBox value={search} onSearch={handleSearch} />
+      <SearchBox
+        value={search}
+        onSearch={handleSearch}
+      />
 
-      <Link href="/notes/action/create">Create note +</Link>
+      <Link href="/notes/action/create">
+        Create note +
+      </Link>
 
       {data.notes.length > 0 ? (
-        <NoteList notes={data.notes} />
+        <>
+          <NoteList notes={data.notes} />
+
+          <Pagination
+            currentPage={page}
+            totalPages={data.totalPages}
+            onPageChange={handlePageChange}
+          />
+        </>
       ) : (
         <p>No notes found.</p>
       )}
-
-      <Pagination
-        currentPage={page}
-        totalPages={data.totalPages}
-        onPageChange={handlePageChange}
-      />
     </main>
   );
 }

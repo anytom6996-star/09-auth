@@ -1,5 +1,3 @@
-export const API_URL = 'https://notehub-public.goit.study/api';
+import { api } from '@/lib/api/api';
 
-export function getAuthorization(request: Request) {
-  return request.headers.get('authorization');
-}
+export { api };

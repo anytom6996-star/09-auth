@@ -18,7 +18,9 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
 
     setError('');
@@ -39,7 +41,9 @@ export default function LoginForm() {
       router.push('/profile');
       router.refresh();
     } catch {
-      setError('Login failed. Please check your email and password.');
+      setError(
+        'Login failed. Please check your email and password.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -49,10 +53,11 @@ export default function LoginForm() {
     <form onSubmit={handleSubmit}>
       <div>
         <label htmlFor="email">Email</label>
+
         <input
           id="email"
-          name="email"
           type="email"
+          name="email"
           value={email}
           onChange={event => setEmail(event.target.value)}
           required
@@ -61,25 +66,31 @@ export default function LoginForm() {
 
       <div>
         <label htmlFor="password">Password</label>
+
         <input
           id="password"
-          name="password"
           type="password"
+          name="password"
           value={password}
           onChange={event => setPassword(event.target.value)}
           required
         />
       </div>
 
-      {error && <p>{error}</p>}
+      <div>
+        <button
+          type="submit"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Logging in...' : 'Log in'}
+        </button>
+      </div>
 
-      <button type="submit" disabled={isLoading}>
-        {isLoading ? 'Logging in...' : 'Login'}
-      </button>
+      {error && <p>{error}</p>}
 
       <p>
         Don&apos;t have an account?{' '}
-        <Link href="/sign-up">Register</Link>
+        <Link href="/sign-up">Sign up</Link>
       </p>
     </form>
   );

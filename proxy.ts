@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import { cookies } from 'next/headers';
+import { parseSetCookie } from 'cookie';
 
 import { checkSession } from '@/lib/api/serverApi';
 
@@ -21,8 +22,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const accessToken = request.cookies.get('accessToken')?.value;
-  const refreshToken = request.cookies.get('refreshToken')?.value;
+  const cookieStore = await cookies();
+
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const refreshToken = cookieStore.get('refreshToken')?.value;
 
   let isAuthenticated = false;
   let sessionResponse = null;
@@ -37,17 +40,15 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isPrivateRoute && !isAuthenticated) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/sign-in';
-
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(
+      new URL('/sign-in', request.url),
+    );
   }
 
   if (isPublicRoute && isAuthenticated) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/profile';
-
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(
+      new URL('/', request.url),
+    );
   }
 
   const response = NextResponse.next();
@@ -55,23 +56,23 @@ export async function proxy(request: NextRequest) {
   const setCookie = sessionResponse?.headers['set-cookie'];
 
   if (setCookie) {
-    setCookie.forEach(cookie => {
-      const [nameValue, ...attributes] = cookie.split('; ');
-      const [name, ...valueParts] = nameValue.split('=');
+    const cookieArray = Array.isArray(setCookie)
+      ? setCookie
+      : [setCookie];
+
+    cookieArray.forEach(cookieString => {
+      const parsed = parseSetCookie(cookieString);
+
+      if (!parsed || !parsed.value) {
+        return;
+      }
+
+      const { name, value, ...options } = parsed;
 
       response.cookies.set({
         name,
-        value: valueParts.join('='),
-        ...Object.fromEntries(
-          attributes.map(attribute => {
-            const [key, ...value] = attribute.split('=');
-
-            return [
-              key.toLowerCase(),
-              value.length ? value.join('=') : true,
-            ];
-          }),
-        ),
+        value,
+        ...options,
       });
     });
   }
@@ -80,5 +81,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/profile/:path*', '/notes/:path*', '/sign-in', '/sign-up'],
+  matcher: [
+    '/profile/:path*',
+    '/notes/:path*',
+    '/sign-in',
+    '/sign-up',
+  ],
 };

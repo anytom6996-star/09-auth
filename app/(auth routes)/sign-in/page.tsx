@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
+
 import LoginForm from './LoginForm';
 
 export const metadata: Metadata = {
-  title: 'Login | NoteHub',
-  description: 'Log in to your NoteHub account.',
+  title: 'Sign in | NoteHub',
+  description: 'Sign in to your NoteHub account.',
   openGraph: {
-    title: 'Login | NoteHub',
-    description: 'Log in to your NoteHub account.',
-    url: 'https://notehub.com/login',
+    title: 'Sign in | NoteHub',
+    description: 'Sign in to your NoteHub account.',
+    url: 'https://notehub.com/sign-in',
     images: [
       {
         url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
@@ -19,10 +20,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function LoginPage() {
+export default function SignInPage() {
   return (
     <main>
-      <h1>Login</h1>
+      <h1>Sign in</h1>
       <LoginForm />
     </main>
   );
